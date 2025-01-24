@@ -1,0 +1,454 @@
+/*전체 css*/
+.App {
+  display: flex;
+  height: 100vh;
+}
+
+button{
+  cursor: pointer;
+}
+
+/*Home css*/
+.Home {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #1970FF;
+}
+
+.Home > .container {
+  width: 50%;
+}
+
+.Home > .container > div {
+  text-align: center;
+}
+
+.Home > .container > .logo{
+  font-size: 3rem;
+  font-weight: bold;
+  color: white;
+  padding-bottom: 5%;
+}
+
+.Home > .container > .container-button-box{
+  background-color: white;
+  border-radius: 10px;
+  padding: 5% 0;
+}
+
+.Home > .container > .container-button-box > .container-buttons{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.Home > .container > .container-button-box > .container-buttons button{
+  width: 80%;
+  padding: 1.5% 0;
+  margin: 2.5% 0;
+  font-size: 1rem;
+  background-color: #0060FF;
+  border:none;
+  border-radius: 4px;
+  color:white;
+  font-weight: bold;
+}
+
+.Home > .container > .container-button-box > .container-buttons button:hover{
+  background-color: #0041ab;
+}
+
+/* 대기실 */
+.WaitingRoom{
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 대기실 헤더 */
+.WaitingRoom > header{
+  width: 100%;
+  height: 12%;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #D9D9D9;
+  font-weight: 500;
+}
+
+.WaitingRoom > header > div{
+  padding: 10%;
+  cursor: pointer;
+}
+
+.WaitingRoom > header > div > span{
+  color: #0060ff;
+}
+
+/* 대기실 내용 설정*/
+.WaitingRoom > section{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.WaitingRoom > section > div{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.WaitingRoom > section > .left{
+  padding: 0 5% 0 10%;
+}
+
+.WaitingRoom > section > .left > .join{
+  height: 60%;
+}
+
+.WaitingRoom > section > .left > .setting{
+  border-top: 1px solid #F1F0F0;
+  height: 40%;
+}
+
+.WaitingRoom > section > .left > .setting > p{
+  font-size: 1rem;
+  font-weight: bold;
+  color: #292D32;
+}
+
+.WaitingRoom > section > .left > .setting > .onoff{
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 1rem;
+  gap: 5%;
+}
+
+.WaitingRoom > section > .left > .setting > .onoff > div{
+  width: 100%;
+  margin: 5% 0;
+  cursor: pointer;
+}
+
+.WaitingRoom > section > .left > .setting > .onoff > div > span{
+  padding: 2% 2.5%;
+  margin-right: 2%;
+  color: white;
+  border-radius: 100%;
+}
+
+/* 방생성 및 참가 */
+.WaitingRoom > section > .left > .join > div{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap:5%;
+}
+
+.WaitingRoom > section > .left > .join > div > input,button
+{
+  border-radius: 4px;
+  padding:2.5%;
+}
+
+.WaitingRoom > section > .left > .join > div > input
+{
+  border: 1px solid #D9D9D9;
+}
+
+.registerBtn{
+  background-color: #0060FF;
+  border: none;
+  color: white;
+  font-weight: bold;
+}
+
+/* 설정 화면 보여주기 */
+.WaitingRoom > section > .right{
+  justify-content: center;
+  align-items: center;
+  background-color: #F1F0F0;
+  padding: 0 10%;
+  
+}
+
+.WaitingRoom > section > .right > div{
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.WaitingRoom > section > .right > div> video{
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border:none;
+}
+
+.WaitingRoom > section > .right > div> div{
+  position: absolute;
+  bottom: 5%;
+}
+
+.WaitingRoom > section > .right > div> .nickname{
+  left: 5%;
+  color: white;
+  font-size: 1rem;
+  padding: 1% 3%;
+  background-color: rgba(0, 0, 0,0.3);
+  border-radius: 20px;
+}
+
+
+.WaitingRoom > section > .right > div> .audio{
+  right: 5%;
+  border-radius: 50%;
+  padding: 2% 2.5%;
+  background-color: #EB5757;
+  color: white;
+}
+
+
+/* 화상통화 */
+.VideoCallRoom{
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 화상통화 헤더 */
+.VideoCallRoom > header{
+  width: 100%;
+  height: 12%;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #D9D9D9;
+}
+
+.VideoCallRoom > header > div{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  padding: 5%;
+}
+
+.VideoCallRoom > header > div > .icon{
+  color: #0060ff;
+  font-size: 2.5rem;
+  margin-right: 2.5%;
+}
+
+.VideoCallRoom > header > div> .title> p{
+  font-size: 1.5rem;
+  margin: 3% 0;
+}
+
+.VideoCallRoom > header > div> .title> .date{
+  font-size: 0.8rem;
+  color:#969696;
+}
+
+/* 화상통화 section */
+.VideoCallRoom > section{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.VideoCallRoom >section > div{
+  width: 100%;
+  height: 100%;
+  background-color: #F1F0F0;
+}
+
+/* left-화상통화 */
+
+.VideoCallRoom > section > .left > div{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.VideoCallRoom > section > .left > .participant{
+  height: 85%;
+  padding: 0 6.5%;
+}
+
+/* 설정 */
+.VideoCallRoom > section > .left > .setting{
+  display: flex;
+  flex-direction: row;
+  height: 15%;
+  background-color: white;
+  padding: 0 6.5%;
+}
+
+.VideoCallRoom > section > .left > .setting > div{
+  display: flex;
+  flex-direction: end;
+}
+
+.VideoCallRoom > section > .left > .setting > div > span{
+  color: white;
+  font-size: 1.5rem;
+}
+
+.VideoCallRoom >section > .left > .setting > .setting-icon{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10%;
+}
+
+.VideoCallRoom >section > .left > .setting > .setting-icon > span {
+  padding: 10% 14%;
+  background-color: #0060FF;
+  border-radius: 100%;
+  cursor: pointer;
+}
+
+.VideoCallRoom >section > .left > .setting > .setting-icon > .chat,
+.VideoCallRoom >section > .left > .setting > .setting-icon > .emoji {
+  background-color:#DFEBFF;
+  color:#0041ab;
+}
+
+.VideoCallRoom >section > .left > .setting > .setting-icon > .exit {
+  color: white;
+  background-color: #EB5757;
+  border-radius: 50px;
+  margin-left:10%;
+}
+
+/* right-채팅 */
+.VideoCallRoom > section > .right{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #F6F6F6;
+  border-left:1px solid #EAE9E9;
+}
+
+.VideoCallRoom > section > .right > .select{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 10%;
+  background-color: white;
+}
+
+.VideoCallRoom > section > .right > .select > p{
+  width: 30%;
+  padding: 3% 5%;
+  text-align: center;
+  border-radius: 50px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.select-chat.active, .select-emoji.active {
+  background-color: #DFEBFF; /* 배경색 */
+  color: #0060FF;  /* 텍스트 색 */
+}
+
+.VideoCallRoom > section > .right > .select > .close{
+  width: 10%;
+  padding: 1.5%;
+  border-radius: none;
+  background-color: white;
+  color: black;
+  cursor: pointer;
+}
+
+.VideoCallRoom > section > .right > .chat{
+  width: 100%;
+  height: 75%;
+}
+
+.VideoCallRoom > section > .right > .emoji{
+  width: 100%;
+  height: 75%;
+}
+
+.VideoCallRoom > section > .right > .sender-box{
+  display: flex;
+  width: 100%;
+  height: 15%;
+  border-radius: none;
+  background-color: white;
+  color: black;
+}
+
+.VideoCallRoom > section > .right > .sender-box > .sender{
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 10%;
+}
+
+.VideoCallRoom > section > .right > .sender-box > .sender > .user-select{
+  color: #8D8F98;
+  font-size: 0.8rem;
+  padding-left: 5%;
+}
+.VideoCallRoom > section > .right > .sender-box > .sender > .user-select> select{
+  background-color: #F6F6F6;
+  padding: 1%;
+  border: none;
+  border-radius: 4px;
+  color: #5F6067;
+}
+
+.VideoCallRoom > section > .right > .sender-box > .sender> .input-send{
+  font-size: 1.2rem;
+  background-color: #F6F6F6;
+  border-radius: 50px;
+  width: 100%;
+  margin-top: 2%;
+}
+.VideoCallRoom > section > .right > .sender-box > .sender> .input-send > div{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.VideoCallRoom > section > .right > .sender-box > .sender> .input-send > div > input{
+  width: 90%;
+  outline: none;
+  padding: 2.5% 0% 2.5% 10%;
+  background-color: none;
+  border: none;
+  border-radius: 50px;
+  background-color: #F6F6F6;
+}
+
+.VideoCallRoom > section > .right > .sender-box > .sender> .input-send > div > button{
+  padding: 4%;
+  margin: 1.5%;
+  height: auto;
+  background-color: #0060FF;
+  border-radius: 100%;
+  outline: none;
+  color: white;
+  border: none;
+}
