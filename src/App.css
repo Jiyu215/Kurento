@@ -1,6 +1,7 @@
 /*전체 css*/
 .App {
   display: flex;
+  /* overflow: hidden; */
   height: 100vh;
 }
 
@@ -369,6 +370,7 @@ button{
   background-color: #DFEBFF; /* 배경색 */
   color: #0060FF;  /* 텍스트 색 */
 }
+
 
 .VideoCallRoom > section > .right > .select > .close{
   width: 10%;

@@ -8,8 +8,11 @@ function VideoCallRoom() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const { name, userId, videoOn, audioOn, creator, participants } = location.state || {};
+    
+    const { userId, roomId, participants, creator ,videoOn, audioOn } = location.state || {};
     const [participantsList, setParticipantsList] = useState(participants || []);
+    const [rtcPeers, setRtcPeers] = useState({});
+
     const { name: creatorName, userId: creatorUserId } = creator || {};
     const [videoOnOff, setVideoOnOff] = useState(videoOn);
     const [audioOnOff, setAudioOnOff] = useState(audioOn);
@@ -17,6 +20,7 @@ function VideoCallRoom() {
     const [emojiOn, setEmojiOn] = useState(false);
     const [leftWidth, setLeftWidth] = useState('100%');
     const [rightWidth, setRightWidth] = useState('0%');
+    const [displayOn, setDisplayOn] = useState('none');
 
     const ws = useRef(null);  // 웹소켓 연결을 위한 ref
     const localVideoRef = useRef(null);  // 로컬 비디오를 위한 ref
@@ -25,7 +29,7 @@ function VideoCallRoom() {
     const [newMessage, setNewMessage] = useState("");  // 새 메시지 상태
 
     // WebSocket 서버 URL
-    const wsServerUrl = 'ws://localhost:8080';
+    const wsServerUrl = 'http://127.0.0.1:8888/kurento';
 
     // 현재 날짜와 시간 얻기
     const currentDate = new Date();
@@ -44,11 +48,13 @@ function VideoCallRoom() {
     const formattedDate = currentDate.toLocaleString('ko-KR', options);
 
     const exit = () => {
+        console.log("Exiting the room.");
         navigate("/"); // 홈으로 이동
     };
 
     // 공통 함수로 chat과 emoji를 토글하는 함수
     const toggleSection = (section) => {
+        console.log(`Toggling section: ${section}`);
         if (section === 'chat') {
             setChatOn(true); // Chat을 활성화
             setEmojiOn(false); // Emoji는 비활성화
@@ -63,6 +69,8 @@ function VideoCallRoom() {
         if (emojiOn) setEmojiOn(false); // 이모지가 열려있으면 닫기
         setLeftWidth(chatOn ? '100%' : '75%');
         setRightWidth(chatOn ? '0%' : '25%');
+        setDisplayOn(chatOn ? 'none' : 'block');
+        console.log(`Toggled chat: ${chatOn ? "open" : "closed"}`);
     };
 
     const toggleEmoji = () => {
@@ -70,6 +78,8 @@ function VideoCallRoom() {
         if (chatOn) setChatOn(false); // 채팅이 열려있으면 닫기
         setLeftWidth(emojiOn ? '100%' : '75%');
         setRightWidth(emojiOn ? '0%' : '25%');
+        setDisplayOn(emojiOn ? 'none' : 'block');
+        console.log(`Toggled emoji: ${emojiOn ? "open" : "closed"}`);
     };
 
     const toggleClose = () => {
@@ -77,6 +87,8 @@ function VideoCallRoom() {
         setEmojiOn(false); // 이모지 닫기
         setLeftWidth('100%'); // 기본 왼쪽 영역 크기
         setRightWidth('0%'); // 기본 오른쪽 영역 크기
+        setDisplayOn('none'); // 닫기
+        console.log("Closed chat and emoji.");
     };
 
     const toggleAudio = () => {
@@ -85,6 +97,7 @@ function VideoCallRoom() {
             localStream.getAudioTracks().forEach(track => track.enabled = !audioOnOff);
             setLocalStream(new MediaStream(localStream)); // 상태 업데이트
         }
+        console.log(`Audio toggled: ${audioOnOff ? "on" : "off"}`);
     };
 
     const toggleVideo = () => {
@@ -93,27 +106,32 @@ function VideoCallRoom() {
             localStream.getVideoTracks().forEach(track => track.enabled = !videoOnOff);
             setLocalStream(new MediaStream(localStream)); // 상태 업데이트
         }
+        console.log(`Video toggled: ${videoOnOff ? "on" : "off"}`);
     };
 
-    // 웹소켓 연결 및 메시지 처리
     useEffect(() => {
         ws.current = new WebSocket(wsServerUrl);
 
         ws.current.onopen = () => {
             console.log('WebSocket connection opened.');
+            // 서버에서 예상하는 메서드 이름을 사용하도록 수정
+            const message = {
+                userId: 1,
+                userName: "참가",
+              };
+             // ws.current.send(JSON.stringify(message));
+             console.log("console.log(participantsList);",participantsList);
+              onNewParticipant(JSON.stringify(message));
+              onExistingParticipants(JSON.stringify(message));
         };
 
         ws.current.onmessage = (message) => {
             let parsedMessage = JSON.parse(message.data);
             console.info('Received message: ' + message.data);
+            
 
             switch (parsedMessage.eventId) {
-                case 'existingParticipants':
-                    onExistingParticipants(parsedMessage);
-                    break;
-                case 'newParticipantArrived':
-                    onNewParticipant(parsedMessage);
-                    break;
+
                 case 'participantLeft':
                     onParticipantLeft(parsedMessage);
                     break;
@@ -127,48 +145,45 @@ function VideoCallRoom() {
                     console.error('Unrecognized message', parsedMessage);
             }
         };
-
+        
         return () => {
             if (ws.current) {
+                console.log("Closing WebSocket connection.");
                 ws.current.close();  // 웹소켓 연결 종료
             }
         };
     }, []);
 
-    // 기존 참가자 처리
     const onExistingParticipants = (message) => {
-        let participants = message.payload.data;
-        let videoConstraints = { video: true, audio: true };
-
-        navigator.mediaDevices.getUserMedia(videoConstraints)
+        let participants = parseJsonMessage(message);
+        console.log("기존 참가자:", participants);
+        
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 setLocalStream(stream);
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                // 참가자 리스트 상태 업데이트
                 setParticipantsList(participants);
-
                 participants.forEach(participant => {
                     createPeerConnection(participant);
                 });
             })
-            .catch(err => {
-                console.error('Error getting media: ', err);
-            });
+            .catch(err => console.error('미디어 오류:', err));
     };
 
-    // 새로운 참가자 처리
+
     const onNewParticipant = (message) => {
-        let participant = message.payload.data;
-        createPeerConnection(participant);
+        let participant = parseJsonMessage(message);
+        console.log("새로운 참가자가 도착했습니다:", participant);
+        createPeerConnection(participant);  // 새 참가자에 대한 피어 연결 생성
     };
+    
 
     // 참가자 퇴장 처리
     const onParticipantLeft = (message) => {
         let participant = message.payload.data;
-        // 여기서 참가자가 떠난 후 피어 연결 해제 등 처리
         console.log(participant.userName + ' left the room.');
     };
 
@@ -187,37 +202,40 @@ function VideoCallRoom() {
         participantsList[participant.userId].rtcPeer.addIceCandidate(new RTCIceCandidate(participant.candidate));
     };
 
-    // PeerConnection 생성
     const createPeerConnection = (participant) => {
+        console.log(`참가자(${participant.userId})의 피어 연결 생성`);
+    
         let peerConnection = new RTCPeerConnection();
-        participantsList[participant.userName] = { rtcPeer: peerConnection };
-
-        // ICE 후보 처리
+        setRtcPeers(prevRtcPeers => ({
+            ...prevRtcPeers,
+            [participant.userId]: peerConnection,  // rtcPeer를 rtcPeers 상태에 추가
+        }));
+    
+        // ICE 후보 처리, 스트림 연결 등은 동일하게 처리
         peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
                 sendIceCandidate(event.candidate, participant);
             }
         };
-
-        // 스트림 연결
+    
         if (localStream) {
             localStream.getTracks().forEach(track => {
                 peerConnection.addTrack(track, localStream);
             });
         }
 
-        // 받는 스트림 처리
+        
         peerConnection.ontrack = (event) => {
+            console.log("ontrack 이벤트 발생", event);
             const remoteStream = event.streams[0];
             const remoteVideoElement = document.createElement('video');
             remoteVideoElement.srcObject = remoteStream;
             remoteVideoElement.autoplay = true;
-            remoteVideoElement.playsInline = true;  // 모바일에서 inline으로 재생
-            remoteVideoElement.id = `remote-video-${participant.userId}`; // 고유 ID
+            remoteVideoElement.playsInline = true;  
+            remoteVideoElement.id = `remote-video-${participant.userId}`;
             document.getElementById('videoContainer').appendChild(remoteVideoElement);
         };
-
-        // Offer 보내기
+    
         peerConnection.createOffer({ offerToReceiveAudio: 1, offerToReceiveVideo: 1 })
             .then(offer => {
                 return peerConnection.setLocalDescription(offer);
@@ -226,9 +244,10 @@ function VideoCallRoom() {
                 sendOfferToServer(peerConnection.localDescription, participant);
             })
             .catch(error => {
-                console.error("Error creating offer:", error);
+                console.error("Offer 생성 오류:", error);
             });
     };
+    
 
     // ICE 후보를 서버로 전송
     const sendIceCandidate = (candidate, participant) => {
@@ -237,6 +256,7 @@ function VideoCallRoom() {
             userId: participant.userId,
             candidate: candidate
         };
+        console.log(`Sending ICE candidate for participant: ${participant.userId}`);
         ws.current.send(JSON.stringify(message));
     };
 
@@ -247,7 +267,20 @@ function VideoCallRoom() {
             userId: participant.userId,
             sdpOffer: offer
         };
+        console.log(`Sending video offer to server for participant: ${participant.userId}`);
         ws.current.send(JSON.stringify(message));
+    };
+
+    // JSON 문자열을 객체로 파싱하는 함수
+    const parseJsonMessage = (message) => {
+        try {
+            // 문자열을 파싱하여 객체로 변환
+            return JSON.parse(message);
+        } catch (error) {
+            // 파싱 오류가 발생하면 오류 메시지를 출력하고, 빈 객체를 반환
+            console.error("Error parsing JSON:", error);
+            return {};
+        }
     };
 
     // 메시지 전송
@@ -271,16 +304,18 @@ function VideoCallRoom() {
 
             // 메시지 입력 초기화
             setNewMessage("");
+            console.log("Message sent:", newMessage);
         }
     };
 
     return (
+        
         <div className="VideoCallRoom">
             <header>
                 <div>
                     <div className="icon"> <VideoCameraFilled /> </div>
                     <div className="title">
-                        <p className="titlename">{name}님의 통화방</p>
+                        <p className="titlename">{creator.name}님의 통화방</p>
                         <p className="date">{formattedDate}</p>
                     </div>
                 </div>
@@ -289,16 +324,16 @@ function VideoCallRoom() {
                 <div className="left" style={{ width: leftWidth }}>
                     <div className="participant">
                         {/* 참가자 목록 및 비디오 설정 */}
-                        {participantsList.map((participant, index) => (
+                        {console.log(Array.isArray(participantsList))}
+                        {Array.isArray(participantsList) && participantsList.map((participant, index) => (
                             <div key={index}>
+                                <div id="videoContainer">
+                                    <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "100%" }} />
+                                </div>
                                 <p>{participant.userId}</p>
                             </div>
                         ))}
-
-                        {/* 비디오 컨테이너 */}
-                        <div id="videoContainer">
-                            
-                        </div>
+                        
                     </div>
                     <div className="setting">
                         <div className="setting-icon">
@@ -324,7 +359,7 @@ function VideoCallRoom() {
                         </div>
                     </div>
                 </div>
-                <div className="right" style={{ width: rightWidth }}>
+                <div className="right" style={{ width: rightWidth, display:displayOn }}>
                     <div className="select">
                         <p className={`select-chat ${chatOn ? 'active' : ''}`} onClick={() => toggleSection('chat')}>Chat</p>
                         <p className={`select-emoji ${emojiOn ? 'active' : ''}`} onClick={() => toggleSection('emoji')}>Emoji</p>
