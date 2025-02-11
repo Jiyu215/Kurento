@@ -5,10 +5,10 @@ import { useLocation, useNavigate } from "react-router-dom"; // Outlet을 사용
 import JoinRoom from "./JoinRoom";
 import CreateRoom from "./CreateRoom";
 
-function TestRoom() {
+function WaitingRoom() {
   const [stream, setStream] = useState(null);
-  const [videoOn, setVideoOn] = useState(false); // 비디오 상태 (처음에는 꺼짐)
-  const [audioOn, setAudioOn] = useState(false); // 마이크 상태 (처음에는 꺼짐)
+  const [videoOn, setVideoOn] = useState(true); // 비디오 상태 (처음에는 꺼짐)
+  const [audioOn, setAudioOn] = useState(true); // 마이크 상태 (처음에는 꺼짐)
   const [name, setName] = useState(""); // 이름 상태
   const [roomId, setRoomId] = useState(""); // 방코드 상태
   const videoRef = useRef(null); // 비디오 스트림 참조
@@ -30,7 +30,7 @@ function TestRoom() {
 
         // 비디오 트랙을 가져와서 꺼진 상태로 설정
         const videoTrack = mediaStream.getVideoTracks()[0];
-        videoTrack.enabled = false; // 처음에는 비디오를 끄고 시작
+        videoTrack.enabled = true; // 처음에는 비디오를 끄고 시작
 
       } catch (error) {
         console.error("Error accessing webcam:", error);
@@ -77,82 +77,81 @@ function TestRoom() {
   };
 
   // 방참가 API 호출
-  const handleJoin = async () => {
+  const handleJoin = async() => {
     if (!name.trim() && !roomId.trim()) {
       alert("이름과 방코드를 입력해주세요.");
       return;
     }
-  
+
     if (!name.trim()) {
       alert("이름을 입력해주세요.");
       return;
     }
-  
+    
     if (!roomId.trim()) {
       alert("방코드를 입력해주세요.");
       return;
     }
-  
+
     try {
-      // JSON Server에서 방 정보 조회
-      const response = await axios.get(`http://localhost:5000/rooms?roomId=${roomId}`);
-  
-      if (response.data.length === 0) {
-        alert("존재하지 않는 방입니다.");
-        return;
-      }
-  
-      const room = response.data[0]; // 첫 번째 방 정보 가져오기
-      const userId = "2";  // 예시로 유저 ID를 2로 설정 (실제 유저 ID를 사용하면 좋음)
-  
-      // 참가자 추가
-      const updatedParticipants = [...room.participants, { userId, userName: name, videoOn, audioOn }];
-  
-      // 방 참가자 배열 업데이트
-      await axios.put(`http://localhost:5000/rooms/${room.id}`, {
-        ...room,
-        participants: updatedParticipants,
+      const response = await axios.post(`https://localhost:8080/rooms/${roomId}/join`, {
+        eventId: "joinRoom",
+        userName: name,
+        cameraState: videoOn,
+        audioState: audioOn,
       });
-  
+
+      const { userId, participants, creator } = response.data;
+
+      // console.log(response.data);
       navigate("/room", {
-        state: { userId, roomId, participants: updatedParticipants, creator: room.creator, videoOn, audioOn },
+        state: { userId, roomId, participants, creator, videoOn, audioOn },
       });
     } catch (error) {
       console.error("Error joining room:", error);
       alert("방 참가에 실패했습니다.");
     }
   };
-  
 
   // 방 생성 API 호출
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = async() => {
     if (!name.trim()) {
       alert("이름을 입력해주세요.");
       return;
     }
-  
-    try {
-      // 방 생성 요청
-      const response = await axios.post("http://localhost:5000/rooms", {
-        creator: { userId: "1", userName: name },
-        participants: [
-          { userId: "1", userName: name, videoOn, audioOn, creator: true }
-        ],
+
+    try{
+      //이름, 비디오/오디오 상태 전송
+      const response = await axios.post("https://localhost:8080/rooms", {
+        eventId: "createRoom",
+        userName: name,
+        cameraState: videoOn,
+        audioState: audioOn,
+      }, {
+        timeout: 5000,  // 요청 timeout 설정
+        withCredentials: true,  // 인증 정보 포함 여부
       });
-  
-      // 백엔드에서 유저ID, 방코드 응답 받기
-      const { roomId } = response.data;
-  
-      // 방장 정보와 참가자 정보 전달
+
+      console.log(response.data);
+      //백엔드: 유저ID, 방코드 응답
+      // const { userId } = 1;
+      // const { userId, roomId } = response.data;
+
+      // 방장 정보를 participants 배열에 포함시키기 (예시 방이름 추가)
+      const participants = [
+        { userId:1, roomId:123, userName: name, videoOn, audioOn, creator: true }
+      ];
+
+      // console.log(participants);
       navigate("/room", {
-        state: { userId: "1", roomId, participants: response.data.participants, creator: response.data.creator, videoOn, audioOn },
+        state: { userId:1, roomId:123, participants, creator: { name, userId:1 }, videoOn, audioOn },
       });
-    } catch (error) {
+
+    }catch (error){
       console.error("Error creating room:", error);
       alert("방 생성에 실패했습니다.");
     }
   };
-  
 
   // "WebSite Name" 클릭 시 홈 페이지로 이동하는 함수
   const handleGoHome = () => {
@@ -215,4 +214,4 @@ function TestRoom() {
   );
 }
 
-export default TestRoom;
+export default WaitingRoom;
