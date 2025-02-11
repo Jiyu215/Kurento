@@ -324,7 +324,7 @@ function VideoCallRoom() {
                 <div className="left" style={{ width: leftWidth }}>
                     <div className="participant">
                         {/* 참가자 목록 및 비디오 설정 */}
-                        {console.log(Array.isArray(participantsList))}
+                        {/* {console.log(Array.isArray(participantsList))}
                         {Array.isArray(participantsList) && participantsList.map((participant, index) => (
                             <div key={index}>
                                 <div id="videoContainer">
@@ -332,7 +332,7 @@ function VideoCallRoom() {
                                 </div>
                                 <p>{participant.userId}</p>
                             </div>
-                        ))}
+                        ))} */}
                         
                     </div>
                     <div className="setting">

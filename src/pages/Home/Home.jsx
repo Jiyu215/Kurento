@@ -3,17 +3,17 @@ import React from "react";
 import { useNavigate } from "react-router-dom"; // useNavigate를 import 합니다.
 import { VideoCameraOutlined, VideoCameraAddOutlined, PlusSquareOutlined } from "@ant-design/icons";
 
-function Home() {
+const Home = () => {
     const navigate = useNavigate(); // useNavigate 훅 사용
 
     // 방 생성 버튼 클릭 시
     const handleCreateRoom = () => {
-    navigate("/waiting-room", { state: { action: "create" } });
+    navigate("/rooms", { state: { action: "create" } });
     };
 
     // 방 참가 버튼 클릭 시
     const handleJoinRoom = () => {
-    navigate("/waiting-room", { state: { action: "join" } });
+    navigate("/rooms", { state: { action: "join" } });
     };
 
   return (

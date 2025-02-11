@@ -1,21 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
-import axios from "axios";
+// import axios from "axios";
 import { VideoCameraFilled, VideoCameraOutlined, AudioOutlined, AudioMutedOutlined } from "@ant-design/icons";
-import { useLocation, useNavigate } from "react-router-dom"; // Outlet을 사용하여 하위 라우트 렌더링
+import { useNavigate } from "react-router-dom"; // Outlet을 사용하여 하위 라우트 렌더링
 import JoinRoom from "./JoinRoom";
 import CreateRoom from "./CreateRoom";
 
-function WaitingRoom() {
+const WaitingRoom = ({action, onDataChange}) => {
   const [stream, setStream] = useState(null);
-  const [videoOn, setVideoOn] = useState(false); // 비디오 상태 (처음에는 꺼짐)
-  const [audioOn, setAudioOn] = useState(false); // 마이크 상태 (처음에는 꺼짐)
-  const [name, setName] = useState(""); // 이름 상태
+  const [videoOn, setVideoOn] = useState(true); // 비디오 상태 (처음에는 꺼짐)
+  const [audioOn, setAudioOn] = useState(true); // 마이크 상태 (처음에는 꺼짐)
+  const [userName, setUserName] = useState(""); // 이름 상태
   const [roomId, setRoomId] = useState(""); // 방코드 상태
   const videoRef = useRef(null); // 비디오 스트림 참조
   
   const navigate = useNavigate();
-  const location = useLocation();
-  const action = location.state?.action;
 
   useEffect(() => {
     // 비디오 스트림 가져오기
@@ -30,7 +28,7 @@ function WaitingRoom() {
 
         // 비디오 트랙을 가져와서 꺼진 상태로 설정
         const videoTrack = mediaStream.getVideoTracks()[0];
-        videoTrack.enabled = false; // 처음에는 비디오를 끄고 시작
+        videoTrack.enabled = true; // 처음에는 비디오를 끄고 시작
 
       } catch (error) {
         console.error("Error accessing webcam:", error);
@@ -68,7 +66,7 @@ function WaitingRoom() {
 
   // 이름 입력 변경 핸들러
   const handleNameChange = (e) => {
-    setName(e.target.value); // 입력된 이름을 상태에 반영
+    setUserName(e.target.value); // 입력된 이름을 상태에 반영
   };
 
   // 방코드 입력 변경 핸들러
@@ -78,12 +76,12 @@ function WaitingRoom() {
 
   // 방참가 API 호출
   const handleJoin = async() => {
-    if (!name.trim() && !roomId.trim()) {
+    if (!userName.trim() && !roomId.trim()) {
       alert("이름과 방코드를 입력해주세요.");
       return;
     }
 
-    if (!name.trim()) {
+    if (!userName.trim()) {
       alert("이름을 입력해주세요.");
       return;
     }
@@ -93,64 +91,17 @@ function WaitingRoom() {
       return;
     }
 
-    try {
-      const response = await axios.post(`https://localhost:8080/rooms/${roomId}/join`, {
-        eventId: "joinRoom",
-        userName: name,
-        cameraState: videoOn,
-        audioState: audioOn,
-      });
-
-      const { userId, participants, creator } = response.data;
-
-      // console.log(response.data);
-      navigate("/room", {
-        state: { userId, roomId, participants, creator, videoOn, audioOn },
-      });
-    } catch (error) {
-      console.error("Error joining room:", error);
-      alert("방 참가에 실패했습니다.");
-    }
+    onDataChange({ userName, roomId, videoOn, audioOn });
   };
 
   // 방 생성 API 호출
   const handleCreateRoom = async() => {
-    if (!name.trim()) {
+    if (!userName.trim()) {
       alert("이름을 입력해주세요.");
       return;
     }
 
-    try{
-      //이름, 비디오/오디오 상태 전송
-      const response = await axios.post("https://localhost:8080/rooms", {
-        eventId: "createRoom",
-        userName: name,
-        cameraState: videoOn,
-        audioState: audioOn,
-      }, {
-        timeout: 5000,  // 요청 timeout 설정
-        withCredentials: true,  // 인증 정보 포함 여부
-      });
-
-      console.log(response.data);
-      //백엔드: 유저ID, 방코드 응답
-      // const { userId } = 1;
-      // const { userId, roomId } = response.data;
-
-      // 방장 정보를 participants 배열에 포함시키기 (예시 방이름 추가)
-      const participants = [
-        { userId:1, roomId:123, userName: name, videoOn, audioOn, creator: true }
-      ];
-
-      // console.log(participants);
-      navigate("/room", {
-        state: { userId:1, roomId:123, participants, creator: { name, userId:1 }, videoOn, audioOn },
-      });
-
-    }catch (error){
-      console.error("Error creating room:", error);
-      alert("방 생성에 실패했습니다.");
-    }
+    onDataChange({ userName, roomId, videoOn, audioOn });
   };
 
   // "WebSite Name" 클릭 시 홈 페이지로 이동하는 함수
@@ -170,13 +121,13 @@ function WaitingRoom() {
           <div className="join">
           {action === "create" ? (
               <CreateRoom
-                name={name}
+                name={userName}
                 onNameChange={handleNameChange}
                 onCreate={handleCreateRoom}
               />
             ) : action === "join" ? (
               <JoinRoom
-                name={name}
+                name={userName}
                 roomId={roomId}
                 onNameChange={handleNameChange}
                 onRoomIdChange={handleRoomIdChange}
@@ -205,7 +156,7 @@ function WaitingRoom() {
         <div className="right">
           <div>
             <video ref={videoRef} autoPlay playsInline />
-            {name && (<div className="nickname">{name}</div>)}
+            {userName && (<div className="nickname">{userName}</div>)}
             {!audioOn && (<div className="audio"><AudioMutedOutlined /></div>)}
           </div>
         </div>
