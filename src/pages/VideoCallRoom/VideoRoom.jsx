@@ -6,14 +6,16 @@ import WaitingRoom from "../WaitingRoom/WaitingRoom";
 import { VideoCameraFilled, VideoCameraOutlined, AudioOutlined, AudioMutedOutlined, CommentOutlined, SmileOutlined, PhoneOutlined, CloseOutlined, SendOutlined } from "@ant-design/icons";
 import { message } from "antd";
 
+
 //Participant 클래스 정의
 class Participant{
-    constructor(userId, userName, videoOn = true, audioOn = true){
+    constructor(userId, userName, videoOn = true, audioOn = true, sendMessage){
         this.userId = userId;
         this.userName = userName;
         this.videoOn = videoOn;
         this.audioOn = audioOn;
         this.rtcPeer = null;
+        this.sendMessage = sendMessage;
 
         let container = document.createElement('div');
         let span = document.createElement('span');
@@ -43,7 +45,8 @@ class Participant{
 		if (error) return console.error ("sdp offer error")
 		console.log('Invoking SDP offer callback function');
 
-		var msg =  { id : "receiveVideoFrom",
+		var msg =  { 
+                eventId : "receiveVideoFrom",
 				sender : this.userId,
 				sdpOffer : offerSdp
 			};
@@ -54,9 +57,7 @@ class Participant{
         const message = {
             eventId: 'onIceCandidate',
             userId: this.userId,
-            candidate: candidate,
-            sdpMid: candidate.sdpMid,  // sdp 연결 시 필요한 정보
-            sdpMLineIndex: candidate.sdpMLineIndex  // sdp 연결 시 필요한 정보
+            candidate: this.candidate,
         }
 
         this.sendMessage(message);
@@ -75,8 +76,9 @@ const VideoRoom = () =>{
     const location = useLocation();
     const action = location.state?.action;
 
-    const [userData, setUserData] = useState({ userName: "", roomId: "", videoOn: true, audioOn: true }); // 대기실 사용자 데이터
-    const [prevUserData, setPrevUserData] = useState({ userName: "", roomId: "", videoOn: true, audioOn: true }); // 이전 상태 저장
+    const [userData, setUserData] = useState({userId:"", userName: "", roomId: "", videoOn: true, audioOn: true }); // 백엔드에서 받은 사용자 데이터 저장
+    const [prevUserData, setPrevUserData] = useState({ userId:"", userName: "", roomId: "", videoOn: true, audioOn: true }); // 대기실 사용자 데이터(이전 데이터)
+    const [creatorData, setCreatorData] = useState({userId:"", userName: ""});
     const participants = {};
     // const [participants, setParticipants] = useState({}); // 참가자 객체
 
@@ -89,11 +91,11 @@ const VideoRoom = () =>{
     const [newMessage, setNewMessage] = useState("");  // 새 메시지 상태
     
 
-    const wsServerUrl = 'http://127.0.0.1:8080';
+    const wsServerUrl = "wss://localhost:8080";
     const ws = useRef(null);  // 웹소켓 연결을 위한 ref    
 
     const handleUserDataChange = (data) => {
-        setUserData(data); // 대기실에서 받은 데이터로 상태 업데이트
+        setPrevUserData(data); // 대기실에서 받은 데이터로 상태 업데이트
     };
 
     //채팅 & 이모지
@@ -139,9 +141,9 @@ const VideoRoom = () =>{
     //방참가 함수
     const joinRoom = () => {
         const message = {
-            id: 'joinRoom',
-            userName: userData.userName,
-            roomId: userData.roomId
+            eventId: 'joinRoom',
+            userName: prevUserData.userName,
+            roomId: prevUserData.roomId
         };
 
         sendMessage(message);
@@ -151,24 +153,25 @@ const VideoRoom = () =>{
     const createRoom = () => {
         const message = {
             eventId: 'createRoom',
-            userName: userData.userName
+            userName: prevUserData.userName
         };
 
         sendMessage(message);
     }
 
-    //방생성 or 방참가 실행
-    useEffect(() => { 
-        if (JSON.stringify(prevUserData) !== JSON.stringify(userData)) {
-            if(action=="create") createRoom(); //방 생성 
-            if(action=="join") joinRoom(); //방 참가
-
-            setPrevUserData(userData); // 이전 상태 업데이트
-            console.log("변경완료", userData);
-
-            return;
+    useEffect(() => {
+        // userData와 prevUserData를 비교하지 않고, prevUserData를 userData로 갱신
+        if (action === "create" || action === "join") {
+            // 방 생성 또는 참가
+            if (action === "create") createRoom(); // 방 생성
+            if (action === "join") joinRoom(); // 방 참가
+            
         }
-    }, [userData, prevUserData]); // userData가 변경될 때마다 실행됨
+    }, [prevUserData, action]); // prevUserData와 action만 의존성으로 사용
+
+    useEffect(()=>{
+        console.log("방생성", userData); 
+    },[userData]);
 
     //웹소켓 연결
     useEffect(() => {
@@ -224,9 +227,31 @@ const VideoRoom = () =>{
         }
     }
 
+    //방장 데이터를 추출하는 함수
+    const extractCreatorData = (creatorStringData) =>{
+        const regex = /userId=([a-f0-9-]+), userName=([^)]+)/;
+        const match = creatorStringData.match(regex);
+
+        if (match) {
+            return {
+                userId: match[1], // userId 추출
+                userName: match[2] // userName 추출
+            };
+        } else {
+            return { userId: "", userName: "" }; // 추출 실패 시 기본값 반환
+        }
+    }
+
     //방 생성 후, 백엔드 메시지 받기
     const roomCreated = (response) => {
-        const {action, userId, userName, roomId} = response;
+        const {action, userId, userName, roomId, creator} = response;
+
+        setUserData({
+            ...userData,
+            userId: userId,
+            roomId: roomId,
+            userName: userName
+        });
         console.log('Received createRoomResponse:', response);
     }
 
@@ -237,15 +262,23 @@ const VideoRoom = () =>{
     const sendExistingUsers = (msg) => {
         const constraints = {
             audio : true,
-            video : true
+            video : {
+                mandatory : {
+                maxWidth : 320,
+                maxFrameRate : 15,
+                minFrameRate : 15
+                }
+            }
         };
 
         console.log(msg.userName + "님이 방에 입장하셨습니다.");
-        let participant = new Participant(msg.userId);
+        let participant = new Participant(msg.userId, msg.userName, true, true, sendMessage);
         participants[msg.userId] = participant;
 
         navigator.mediaDevices.getUserMedia(constraints)
-        .then(function(stream) {
+        .then((stream) => {
+            participant.getVideoElement().srcObject = stream;
+
 			var options = {
 				localVideo: participant.getVideoElement(),
 				mediaConstraints: constraints,
@@ -261,7 +294,11 @@ const VideoRoom = () =>{
 					this.generateOffer(participant.offerToReceiveVideo.bind(participant));
 				});
 
-			msg.data.forEach(receiveVideo);
+                if (Array.isArray(msg.data)) {
+                    msg.data.forEach(receiveVideo);
+                } else {
+                    console.warn('msg.data is either not an array or undefined:', msg.data);
+                }
 		})
 		.catch(function(error) {
 			console.error("Error accessing media devices:", error);
@@ -272,15 +309,20 @@ const VideoRoom = () =>{
             mediaConstraints: constraints,
             onicecandidate: participant.onIceCandidate.bind(participant)
         }
+
         participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(options,
             function (error) {
                 if(error) {
                     return console.error(error);
                 }
-                this.generateOffer (participant.offerToReceiveVideo.bind(participant));
+                this.generateOffer(participant.offerToReceiveVideo.bind(participant));
         });
     
-        msg.data.forEach(receiveVideo);
+        if (Array.isArray(msg.data)) {
+            msg.data.forEach(receiveVideo);
+        } else {
+            console.warn('msg.data is either not an array or undefined:', msg.data);
+        }
     }
 
     const receiveVideoResponse = (result) => {
@@ -300,7 +342,8 @@ const VideoRoom = () =>{
 
     //onIcecandidate값 전달 함수 - peer 연결
     const receiveVideo = (sender) => {
-        let participant = new Participant(sender.userName, sender.userId, sender.videoOn, sender.audioOn);
+        console.log("방참가join",sender);
+        let participant = new Participant(sender.userId, sender.userName, true, true, sendMessage);
         participants[sender.userId] = participant;
 
         let options = {
@@ -322,7 +365,7 @@ const VideoRoom = () =>{
     const exitRoom = () => {
         const message = {
             eventId: "exitRoom",
-            userId: userData.userId
+            userId: prevUserData.userId
         };
         sendMessage(message);
 
@@ -340,7 +383,7 @@ const VideoRoom = () =>{
 
     return(
         <>
-            {!userData.userName ? (
+            {!prevUserData.userName ? (
                 <WaitingRoom action={action} onDataChange={handleUserDataChange} />
             ) : (
                 <div className="VideoCallRoom">
