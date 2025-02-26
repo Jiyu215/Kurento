@@ -1,6 +1,6 @@
 import './App.css';
 import Home from './pages/Home/Home';
-import VideoCallRoom from './pages/VideoCallRoom/VideoCallRoom';
+// import VideoCallRoom from './pages/VideoCallRoom/VideoCallRoom';
 import VideoRoom from './pages/VideoCallRoom/VideoRoom';
 // import TestRoom from './pages/WaitingRoom/TestRoom';
 import WaitingRoom from './pages/WaitingRoom/WaitingRoom';
